@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - docker-images/**/*
+      - docker-images/**
 jobs:
   publish-to-staging:
     name: Publish (Staging)
