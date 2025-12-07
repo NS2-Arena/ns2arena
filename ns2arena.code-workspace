@@ -11,6 +11,9 @@
       "path": "frontend"
     },
     {
+      "path": "docker-images"
+    },
+    {
       "path": "common"
     }
   ]
