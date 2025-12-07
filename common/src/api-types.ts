@@ -10,4 +10,6 @@ export type ProvisionServerRequest = {
   map: string;
   launchConfig: string;
 };
-export type ProvisionServerResponse = undefined;
+export type ProvisionServerResponse = {
+  serverUuid: string;
+};

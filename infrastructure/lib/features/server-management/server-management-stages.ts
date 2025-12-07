@@ -64,6 +64,7 @@ export class ServerManagementStages extends Construct {
           launchConfig: "{% $states.input.launchConfig %}",
           map: "{% $states.input.map %}",
         },
+        serverUuid: "{% $states.input.serverUuid %}",
       },
     });
 
@@ -72,8 +73,11 @@ export class ServerManagementStages extends Construct {
       "InvokeCreateServerRecordLambda",
       {
         lambdaFunction: createServerRecord.function,
-        assign: {
-          serverUuid: "{% $states.result.Payload.serverUuid %}",
+        payload: {
+          type: InputType.OBJECT,
+          value: {
+            serverUuid: "{% $serverUuid %}",
+          },
         },
       }
     );

@@ -35,6 +35,7 @@
     "@ns2arena/common": "file:../common",
     "aws-cdk-lib": "2.215.0",
     "aws-lambda": "^1.0.7",
-    "constructs": "^10.0.0"
+    "constructs": "^10.0.0",
+    "uuid": "^13.0.0"
   }
 }
