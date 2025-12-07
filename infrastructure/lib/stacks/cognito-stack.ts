@@ -7,7 +7,7 @@ import {
   OAuthScope,
   UserPool,
 } from "aws-cdk-lib/aws-cognito";
-import { DomainNames, SSMParameters } from "@ns2arena/common";
+import { DomainNames, SSMParameters, SubDomains } from "@ns2arena/common";
 import {
   AwsCustomResource,
   AwsCustomResourcePolicy,
@@ -69,7 +69,7 @@ export class CognitoStack extends BaseStack {
 
     const customDomainName = DomainNames.getDomainName(
       props.environment,
-      "auth"
+      SubDomains.Auth
     );
 
     const certificateArn = SSMParameterReader.readStringParameter(

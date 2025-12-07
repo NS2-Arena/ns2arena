@@ -8,7 +8,7 @@ import {
 } from "aws-cdk-lib/aws-apigateway";
 import { ARecord, HostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { SSMParameterReader } from "../features/ssm-parameter-management/ssm-parameter-reader";
-import { DomainNames, SSMParameters } from "@ns2arena/common";
+import { DomainNames, SSMParameters, SubDomains } from "@ns2arena/common";
 import {
   Certificate,
   CertificateValidation,
@@ -28,7 +28,7 @@ export class RestApiStack extends BaseStack {
 
     const { computeRegions } = props;
 
-    const domainName = DomainNames.getDomainName(props.environment, "api");
+    const domainName = DomainNames.getDomainName(props.environment, SubDomains.Api);
 
     const hostedZoneId = SSMParameterReader.readStringParameter(
       this,

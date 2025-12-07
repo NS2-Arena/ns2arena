@@ -1,6 +1,6 @@
 import { App } from "aws-cdk-lib";
 import { BaseStack, BaseStackProps } from "./base-stack";
-import { DomainNames, SSMParameters } from "@ns2arena/common";
+import { DomainNames, SSMParameters, SubDomains } from "@ns2arena/common";
 import {
   Certificate,
   CertificateValidation,
@@ -34,7 +34,7 @@ export class CognitoCertStack extends BaseStack {
 
     const customDomainName = DomainNames.getDomainName(
       props.environment,
-      "auth"
+      SubDomains.Auth
     );
 
     const certificate = new Certificate(this, "Certificate", {
