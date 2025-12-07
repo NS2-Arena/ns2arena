@@ -1,8 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { PutCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "crypto";
-import { ServerRecord } from "@ns2-arena/common";
-import { LambdaHandler } from "@ns2-arena/common";
+import { ServerRecord, LambdaHandler } from "@ns2arena/common";
 
 interface CreateServerRecordResponse {
   serverUuid: string;

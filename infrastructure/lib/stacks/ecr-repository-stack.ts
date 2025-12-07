@@ -8,7 +8,7 @@ import {
 import { Construct } from "constructs";
 import { BaseStack, BaseStackProps } from "./base-stack";
 import { SSMParameterWriter } from "../features/ssm-parameter-management/ssm-parameter-writer";
-import { SSMParameters } from "@ns2-arena/common";
+import { SSMParameters } from "@ns2arena/common";
 import { EcrRepoInfo } from "../features/serverless-ns2-server/ecr-repo-info";
 
 interface EcrRepositoryStackProps extends BaseStackProps {

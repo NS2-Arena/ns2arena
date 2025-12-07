@@ -1,6 +1,6 @@
 import { SFNClient, StartExecutionCommand } from "@aws-sdk/client-sfn";
-import { ProvisionServerRequest } from "@ns2-arena/common";
-import { httpHandler } from "@ns2-arena/common";
+import { ProvisionServerRequest } from "@ns2arena/common";
+import { httpHandler } from "@ns2arena/common";
 
 export const handler = httpHandler<undefined>(async (event) => {
   if (event.body === null) throw new Error("Missing request");

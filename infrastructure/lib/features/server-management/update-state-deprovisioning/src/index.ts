@@ -1,7 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { ServerRecordState } from "@ns2-arena/common";
-import { LambdaHandler } from "@ns2-arena/common";
+import { ServerRecordState } from "@ns2arena/common";
+import { LambdaHandler } from "@ns2arena/common";
 
 interface UpdateStateDeprovisioningEvent {
   serverUuid: string;

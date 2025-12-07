@@ -21,7 +21,7 @@ import { UpdateStateActive } from "./update-state-active/update-state-active";
 import { UpdateStatePending } from "./update-state-pending/update-state-pending";
 import { UpdateStateDeprovisioning } from "./update-state-deprovisioning/update-state-deprovisioning";
 import { SSMParameterWriter } from "../ssm-parameter-management/ssm-parameter-writer";
-import { SSMParameters } from "@ns2-arena/common";
+import { SSMParameters } from "@ns2arena/common";
 
 interface ServerManagementStateMachineProps {
   vpc: IVpc;

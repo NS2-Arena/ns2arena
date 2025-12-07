@@ -5,7 +5,7 @@ import { Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { ConfigBucket } from "../features/config-bucket/config-bucket";
 import { RegionInfo } from "../../bin/variables";
 import { SSMParameterReader } from "../features/ssm-parameter-management/ssm-parameter-reader";
-import { SSMParameters } from "@ns2-arena/common";
+import { SSMParameters } from "@ns2arena/common";
 
 interface SourceConfigBucketStackProps extends BaseStackProps {
   mainRegion: string;

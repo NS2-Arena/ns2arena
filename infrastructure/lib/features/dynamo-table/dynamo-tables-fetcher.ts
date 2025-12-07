@@ -1,6 +1,6 @@
 import { ITable, Table } from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
-import { SSMParameters } from "@ns2-arena/common";
+import { SSMParameters } from "@ns2arena/common";
 import { Stack } from "aws-cdk-lib";
 import { SSMParameterReader } from "../ssm-parameter-management/ssm-parameter-reader";
 

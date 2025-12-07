@@ -32,7 +32,7 @@
     "@aws-sdk/client-dynamodb": "^3.922.0",
     "@aws-sdk/client-sfn": "^3.940.0",
     "@aws-sdk/lib-dynamodb": "^3.922.0",
-    "@ns2-arena/common": "^1.3.0",
+    "@ns2arena/common": "file:../common",
     "aws-cdk-lib": "2.215.0",
     "aws-lambda": "^1.0.7",
     "constructs": "^10.0.0"

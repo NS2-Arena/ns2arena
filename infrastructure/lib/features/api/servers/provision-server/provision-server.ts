@@ -3,7 +3,7 @@ import { NagSuppressions } from "cdk-nag";
 import { BaseLambdaFunction } from "../../../base-lambda/base-lambda";
 import { StateMachine } from "aws-cdk-lib/aws-stepfunctions";
 import { SSMParameterReader } from "../../../ssm-parameter-management/ssm-parameter-reader";
-import { SSMParameters } from "@ns2-arena/common";
+import { SSMParameters } from "@ns2arena/common";
 import { RegionInfo } from "../../../../../bin/variables";
 
 interface ProvisionServerProps {

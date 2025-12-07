@@ -7,7 +7,7 @@ import { BaseStack, BaseStackProps } from "./base-stack";
 import { Bucket } from "aws-cdk-lib/aws-s3";
 import { SSMParameterReader } from "../features/ssm-parameter-management/ssm-parameter-reader";
 import { ServerManagementStateMachine } from "../features/server-management/server-management-state-machine";
-import { SSMParameters } from "@ns2-arena/common";
+import { SSMParameters } from "@ns2arena/common";
 
 export class NS2ArenaCompute extends BaseStack {
   constructor(scope: Construct, id: string, props: BaseStackProps) {

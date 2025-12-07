@@ -1,6 +1,6 @@
 import { App } from "aws-cdk-lib";
 
-import { Environment } from "@ns2-arena/common";
+import { Environment } from "@ns2arena/common";
 
 export interface RegionInfo {
   value: string;

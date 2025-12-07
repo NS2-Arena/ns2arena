@@ -6,7 +6,7 @@ import {
 } from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
 import { SSMParameterWriter } from "../ssm-parameter-management/ssm-parameter-writer";
-import { SSMParameters } from "@ns2-arena/common";
+import { SSMParameters } from "@ns2arena/common";
 
 interface NS2ArenaDynamoTableProps {
   readonly tableName: string;

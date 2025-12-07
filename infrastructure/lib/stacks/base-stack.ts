@@ -1,4 +1,4 @@
-import { Environment } from "@ns2-arena/common";
+import { Environment } from "@ns2arena/common";
 import { Stack, StackProps, Tags } from "aws-cdk-lib";
 import { Construct } from "constructs";
 

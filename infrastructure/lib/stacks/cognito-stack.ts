@@ -7,7 +7,7 @@ import {
   OAuthScope,
   UserPool,
 } from "aws-cdk-lib/aws-cognito";
-import { DomainNames, SSMParameters } from "@ns2-arena/common";
+import { DomainNames, SSMParameters } from "@ns2arena/common";
 import {
   AwsCustomResource,
   AwsCustomResourcePolicy,

@@ -1,6 +1,6 @@
 import { App } from "aws-cdk-lib";
 import { BaseStack, BaseStackProps } from "./base-stack";
-import { DomainNames, SSMParameters } from "@ns2-arena/common";
+import { DomainNames, SSMParameters } from "@ns2arena/common";
 import {
   Certificate,
   CertificateValidation,

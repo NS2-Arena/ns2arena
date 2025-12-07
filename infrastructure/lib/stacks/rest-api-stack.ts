@@ -8,7 +8,7 @@ import {
 } from "aws-cdk-lib/aws-apigateway";
 import { ARecord, HostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { SSMParameterReader } from "../features/ssm-parameter-management/ssm-parameter-reader";
-import { DomainNames, SSMParameters } from "@ns2-arena/common";
+import { DomainNames, SSMParameters } from "@ns2arena/common";
 import {
   Certificate,
   CertificateValidation,

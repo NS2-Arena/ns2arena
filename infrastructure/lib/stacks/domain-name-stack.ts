@@ -2,7 +2,7 @@ import { App } from "aws-cdk-lib";
 import { BaseStack, BaseStackProps } from "./base-stack";
 import { PublicHostedZone } from "aws-cdk-lib/aws-route53";
 import { SSMParameterWriter } from "../features/ssm-parameter-management/ssm-parameter-writer";
-import { DomainNames, SSMParameters } from "@ns2-arena/common";
+import { DomainNames, SSMParameters } from "@ns2arena/common";
 
 export class DomainNameStack extends BaseStack {
   constructor(scope: App, id: string, props: BaseStackProps) {

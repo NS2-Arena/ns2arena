@@ -8,7 +8,7 @@ import {
 import { NagSuppressions } from "cdk-nag";
 import { Construct } from "constructs";
 import { SSMParameterWriter } from "../ssm-parameter-management/ssm-parameter-writer";
-import { SSMParameters } from "@ns2-arena/common";
+import { SSMParameters } from "@ns2arena/common";
 
 export class ConfigBucket extends Bucket {
   constructor(scope: Construct, id: string, props?: BucketProps) {
