@@ -1,0 +1,10 @@
+{
+  "editor.formatOnSave": true,
+  "[typescript][typescriptreact][json][yaml][javascript][jsonc][jsonl]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "files.associations": {
+    "*.css": "tailwindcss"
+  }
+}
