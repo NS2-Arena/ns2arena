@@ -1,0 +1,18 @@
+{
+  "groups":{
+    "mod_group":{
+      "commands":["sv_reset","sv_ban"],
+      "type":"allowed"
+    },
+    "admin_group":{
+      "commands":[],
+      "type":"disallowed"
+    }
+  },
+  "users":{
+    "asdf":{
+      "groups":["admin_group"],
+      "id":107716916
+    }
+  }
+}

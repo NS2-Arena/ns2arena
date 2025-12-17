@@ -1,0 +1,27 @@
+{
+    "MessageDelay": 5,
+    "ShowForBots": false,
+    "ShowGeneric": true,
+    "Users": {
+        "107716916": {
+            "Leave": {
+		"Message": [
+                    [ 0, 170, 255 ],
+                    "4sdfg",
+                    [ 255, 255, 255 ],
+                    " is off to fight more important battles."
+		]
+	    },
+            "Welcome": {
+		"Message": [
+                    [ 0, 170, 255 ],
+                    "4sdfg",
+                    [ 255, 255, 255 ],
+		    " has joined :smiling_face_with_sunglasses:"
+		],
+		"ParseEmoji": true
+	    }
+        }
+    },
+    "__Version": "1.4"
+}

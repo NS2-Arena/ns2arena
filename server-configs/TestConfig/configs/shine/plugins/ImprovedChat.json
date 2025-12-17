@@ -1,0 +1,6 @@
+{
+    "DisplayChatTagsInTeamChat": true,
+    "LogLevel": "INFO",
+    "ParseEmojiInChat": true,
+    "__Version": "1.1"
+}

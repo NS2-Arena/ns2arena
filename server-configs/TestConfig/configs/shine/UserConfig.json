@@ -1,0 +1,19 @@
+{
+    "Groups": {
+        "admin_group": {
+            "Commands": [],
+            "Immunity": 10,
+            "IsBlacklist": true
+        },
+        "mod_group": {
+            "Commands": [ "sh_reset", "sh_ban" ],
+            "Immunity": 10,
+            "IsBlacklist": false
+        }
+    },
+    "Users": {
+        "107716916": {
+            "Group": "admin_group"
+        }
+    }
+}

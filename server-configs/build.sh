@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+rm dist.zip
+zip -r dist.zip .

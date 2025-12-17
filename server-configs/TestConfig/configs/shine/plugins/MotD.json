@@ -1,0 +1,13 @@
+{
+    "Accepted": [],
+    "Delay": 5,
+    "MessageColour": [ 255, 255, 255 ],
+    "MessageText": [
+        "Welcome to my awesome server!",
+        "Admins can be reached @ mywebsite.com",
+        "Have a pleasant stay!"
+    ],
+    "Mode": "TEXT_ONLY",
+    "URL": "https://www.unknownworlds.com/ns2/",
+    "__Version": "1.3"
+}

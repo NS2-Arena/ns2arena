@@ -1,0 +1,15 @@
+{
+    "LogChat": true,
+    "LogCommanderLogin": true,
+    "LogConnections": true,
+    "LogConstruction": true,
+    "LogConsuming": true,
+    "LogEjectVotes": true,
+    "LogGameVotes": true,
+    "LogKills": true,
+    "LogNameChanges": true,
+    "LogRecycling": true,
+    "LogRoundStartEnd": true,
+    "LogTeamJoins": true,
+    "__Version": "1.2"
+}

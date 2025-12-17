@@ -1,0 +1,11 @@
+{
+    "MenuEntryName": "Wonitor",
+    "MenuEntryUrl": "",
+    "SendNS2PlusStats": false,
+    "SendNS2PlusStatsKillFeed": false,
+    "SendWonitorStats": true,
+    "ServerIdentifier": "",
+    "ShowMenuEntry": true,
+    "WonitorURL": "",
+    "__Version": "2.1"
+}

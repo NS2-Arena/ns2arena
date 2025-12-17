@@ -1,0 +1,8 @@
+{
+    "APIURL": "",
+    "MaxSubmitRetries": 3,
+    "RequestArguments": [],
+    "SendActionsToURL": false,
+    "SubmitTimeout": 5,
+    "__Version": "1.0"
+}

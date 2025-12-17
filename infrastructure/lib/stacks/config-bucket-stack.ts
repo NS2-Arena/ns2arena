@@ -6,6 +6,8 @@ import { ConfigBucket } from "../features/config-bucket/config-bucket";
 import { RegionInfo } from "../../bin/variables";
 import { SSMParameterReader } from "../features/ssm-parameter-management/ssm-parameter-reader";
 import { SSMParameters } from "@ns2arena/common";
+import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
+import path from "path";
 
 interface SourceConfigBucketStackProps extends BaseStackProps {
   mainRegion: string;
@@ -22,7 +24,7 @@ export class ConfigBucketStack extends BaseStack {
 
     const { mainRegion, replicationRegions } = props;
 
-    if (replicationRegions.length === 0 || mainRegion !== this.region) {
+    if (mainRegion !== this.region) {
       new ConfigBucket(this, "ConfigBucket");
       return;
     }
@@ -59,6 +61,13 @@ export class ConfigBucketStack extends BaseStack {
 
     sourceBucket.grantReplicationPermission(replicationRole, {
       destinations: destinationBuckets.map((bucket) => ({ bucket })),
+    });
+
+    new BucketDeployment(this, "ConfigBucketDeployment", {
+      destinationBucket: sourceBucket,
+      sources: [
+        Source.asset(path.join(__dirname, "../../../server-configs/dist.zip")),
+      ],
     });
   }
 }

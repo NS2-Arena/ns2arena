@@ -1,0 +1,13 @@
+{
+    "Debug": false,
+    "ENSLTeams": true,
+    "ENSLTeamsRow": 4,
+    "Flags": true,
+    "FlagsRow": 2,
+    "ForceENSLTeamsBadge": false,
+    "ForceFlagsBadge": false,
+    "ForceSteamBadge": false,
+    "SteamBadges": true,
+    "SteamBadgesRow": 5,
+    "__Version": "1.6"
+}

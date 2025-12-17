@@ -1,0 +1,38 @@
+{
+  "mode":"order",
+  "maps":[
+      "ns2_ayumi",
+      "ns2_biodome",
+      "ns2_caged",
+      "ns2_eclipse",
+      "ns2_derelict",
+      "ns2_descent",
+      "ns2_docking",
+      "ns2_kodiak",
+      "ns2_metro",
+      "ns2_mineshaft",
+      "ns2_origin",
+      "ns2_refinery",
+      "ns2_summit",
+      "ns2_tanith",
+      "ns2_tram",
+      "ns2_unearthed",
+      "ns2_veil",
+      {"map": "ns2_jambi", "mods": [129599221]},
+      {"map": "ns2_jambi_redux", "mods": [1833252463]},
+      {"map": "ns2_unearthed_butbetter", "mods": [1162834732]},
+      {"map": "ns2_nexus_fixes", "mods": [2905095973]},
+      {"map": "ns2_mineral_nsl", "mods": [2964037246]}
+  ],
+  "time":30,
+  "mods":[
+      117887554,
+      208649136,
+      593421222,
+      191973881,
+      1876217244,
+      1570569142,
+      3143872909,
+      3452675258
+  ]
+}
