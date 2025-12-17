@@ -10,6 +10,8 @@ import { SSMDependencyTracker } from "../lib/features/ssm-parameter-management/s
 import { DomainNameStack } from "../lib/stacks/domain-name-stack";
 import { CognitoStack } from "../lib/stacks/cognito-stack";
 import { CognitoCertStack } from "../lib/stacks/cognito-cert-stack";
+import { FrontendStack } from "../lib/stacks/frontend-stack";
+import { FrontendCertStack } from "../lib/stacks/frontend-cert-stack";
 
 const app = new App();
 
@@ -109,6 +111,25 @@ new CognitoStack(app, "Cognito", {
   serviceName: "Cognito",
   environment,
 });
+
+new FrontendCertStack(app, "FrontendCert", {
+  env: {
+    account,
+    region: "us-east-1",
+  },
+  serviceName: "Frontend",
+  environment,
+  mainRegion,
+});
+
+// new FrontendStack(app, "Frontend", {
+//   env: {
+//     account,
+//     region: mainRegion,
+//   },
+//   serviceName: "Frontend",
+//   environment,
+// });
 
 // Create lobby step function workflow
 

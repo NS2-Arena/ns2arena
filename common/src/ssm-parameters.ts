@@ -34,6 +34,9 @@ export class SSMParameters {
     Auth: {
       Arn: "/NS2Arena/Certificates/Auth/Arn",
     },
+    Root: {
+      Arn: "/NS2Arena/Certificates/Root/Arn",
+    },
   };
 
   public static UserPool = {
