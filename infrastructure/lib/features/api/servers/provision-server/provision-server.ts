@@ -1,5 +1,4 @@
 import { Construct } from "constructs";
-import { NagSuppressions } from "cdk-nag";
 import { BaseLambdaFunction } from "../../../base-lambda/base-lambda";
 import { StateMachine } from "aws-cdk-lib/aws-stepfunctions";
 import { SSMParameterReader } from "../../../ssm-parameter-management/ssm-parameter-reader";
@@ -39,16 +38,5 @@ export class ProvisionServer extends BaseLambdaFunction {
         arn
       );
     });
-
-    NagSuppressions.addResourceSuppressions(this.function, [
-      {
-        id: "Serverless-LambdaDLQ",
-        reason: "DLQ is not required",
-      },
-      {
-        id: "NIST.800.53.R5-LambdaDLQ",
-        reason: "DLQ is not required",
-      },
-    ]);
   }
 }

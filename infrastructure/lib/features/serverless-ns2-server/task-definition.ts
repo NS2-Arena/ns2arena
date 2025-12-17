@@ -11,7 +11,6 @@ import { Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { IBucket } from "aws-cdk-lib/aws-s3";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
-import { NagSuppressions } from "cdk-nag";
 import { Construct } from "constructs";
 import { SSMParameters } from "@ns2arena/common";
 import { EcrRepoInfo } from "./ecr-repo-info";

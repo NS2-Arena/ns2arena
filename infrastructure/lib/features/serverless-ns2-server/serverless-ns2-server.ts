@@ -20,7 +20,6 @@ import {
   ServicePrincipal,
 } from "aws-cdk-lib/aws-iam";
 import NS2ServerSecurityGroup from "./ns2-server-security-group";
-import { NagSuppressions } from "cdk-nag";
 
 type ServerlessNS2ServerProps = {
   vpc: IVpc;

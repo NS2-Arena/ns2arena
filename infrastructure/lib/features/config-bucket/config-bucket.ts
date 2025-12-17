@@ -5,7 +5,6 @@ import {
   BucketEncryption,
   BucketProps,
 } from "aws-cdk-lib/aws-s3";
-import { NagSuppressions } from "cdk-nag";
 import { Construct } from "constructs";
 import { SSMParameterWriter } from "../ssm-parameter-management/ssm-parameter-writer";
 import { SSMParameters } from "@ns2arena/common";
@@ -21,6 +20,7 @@ export class ConfigBucket extends Bucket {
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       removalPolicy: RemovalPolicy.DESTROY,
       enforceSSL: true,
+      autoDeleteObjects: true,
       ...props,
     });
 
@@ -33,23 +33,5 @@ export class ConfigBucket extends Bucket {
       stringValue: this.bucketName,
       parameterName: SSMParameters.ConfigBucket.Name,
     });
-
-    NagSuppressions.addResourceSuppressions(
-      this,
-      ["AwsSolutions-S1", "NIST.800.53.R5-S3BucketLoggingEnabled"].map(
-        (id) => ({
-          id,
-          reason:
-            "Server access logs are not required for this bucket as it does not store sensitive data",
-        })
-      )
-    );
-
-    NagSuppressions.addResourceSuppressions(this, [
-      {
-        id: "NIST.800.53.R5-S3DefaultEncryptionKMS",
-        reason: "Not using KMS",
-      },
-    ]);
   }
 }

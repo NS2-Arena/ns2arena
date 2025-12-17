@@ -8,7 +8,6 @@ import {
   Role,
 } from "aws-cdk-lib/aws-iam";
 import { Stack, StackProps } from "aws-cdk-lib";
-import { NagSuppressions } from "cdk-nag";
 
 export class GithubIntegrationStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
@@ -22,6 +21,7 @@ export class GithubIntegrationStack extends Stack {
     const actionsPolicy = new ManagedPolicy(this, "ActionsPolicy", {
       statements: [
         new PolicyStatement({
+          // TODO: Lock down a bit
           actions: ["*"],
           resources: ["*"],
           effect: Effect.ALLOW,
@@ -46,18 +46,5 @@ export class GithubIntegrationStack extends Stack {
       managedPolicies: [actionsPolicy],
       roleName: "ActionsRole",
     });
-
-    // TODO: Lock down a bit
-    NagSuppressions.addResourceSuppressions(actionsPolicy, [
-      { id: "AwsSolutions-IAM5", reason: "Allowing administrator access" },
-      {
-        id: "NIST.800.53.R5-IAMPolicyNoStatementsWithAdminAccess",
-        reason: "Allowing administrator access",
-      },
-      {
-        id: "NIST.800.53.R5-IAMPolicyNoStatementsWithFullAccess",
-        reason: "Allowing administrator access",
-      },
-    ]);
   }
 }

@@ -30,6 +30,21 @@
             }
           ]
         }
+      },
+      "prod": {
+        "regionConfig": {
+          "mainRegion": "eu-west-2",
+          "computeRegions": [
+            {
+              "value": "eu-west-2",
+              "alias": "London"
+            },
+            {
+              "value": "us-east-1",
+              "alias": "NVirginia"
+            }
+          ]
+        }
       }
     },
     "@aws-cdk/aws-signer:signingProfileNamePassedToCfn": true,

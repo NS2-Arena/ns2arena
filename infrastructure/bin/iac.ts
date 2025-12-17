@@ -1,11 +1,6 @@
 #!/usr/bin/env node
-import { App, Aspects } from "aws-cdk-lib";
+import { App } from "aws-cdk-lib";
 import { RestApiStack } from "../lib/stacks/rest-api-stack";
-import {
-  AwsSolutionsChecks,
-  NIST80053R5Checks,
-  ServerlessChecks,
-} from "cdk-nag";
 import { EcrRepositoryStack } from "../lib/stacks/ecr-repository-stack";
 import { NS2ArenaCompute } from "../lib/stacks/compute-stack";
 import { ConfigBucketStack } from "../lib/stacks/config-bucket-stack";
@@ -118,8 +113,3 @@ new CognitoStack(app, "Cognito", {
 // Create lobby step function workflow
 
 SSMDependencyTracker.getInstance().applyStackDependencies();
-
-// Turn off nags for now
-// Aspects.of(app).add(new AwsSolutionsChecks());
-// Aspects.of(app).add(new ServerlessChecks());
-// Aspects.of(app).add(new NIST80053R5Checks());
