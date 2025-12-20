@@ -1,0 +1,8 @@
+config:
+  aws:region: eu-west-2
+  infrastructure:mainRegion: eu-west-2
+  infrastructure:computeRegions:
+    - eu-west-2
+    - us-east-1
+secretsprovider: awskms://alias/StateKey?region=eu-west-2
+encryptedkey: AQICAHgV4r5uVm/rb39JD2vaIm/DM2Wl35Q5rutek5SuIawvOwGrreZjedHpNe/ecxFvjHohAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMCFfxOSfclzrQt+ImAgEQgDuowMq5U+DupBGsPj9e+LYUoF9wKpLxivXI50jxmrbyjAyphnclnsDBRAlsJS77eDizmG+++fEZIaXwog==
