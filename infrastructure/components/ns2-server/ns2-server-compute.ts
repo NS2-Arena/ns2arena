@@ -1,13 +1,13 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as common from "../../common";
-import { ConfigStore } from "../server-configs/config-store";
+import { ConfigStoreBucket } from "../server-configs/config-store-bucket";
 import { NS2ServerComputeRegional } from "./ns2-server-compute-regional";
 
 interface NS2ServerComputeArgs {
   computeRegions: string[];
   repositories: common.types.RegionalData<aws.ecr.Repository>;
-  configStores: common.types.RegionalData<ConfigStore>;
+  configStores: common.types.RegionalData<ConfigStoreBucket>;
 }
 
 export class NS2ServerCompute extends pulumi.ComponentResource {
@@ -16,7 +16,7 @@ export class NS2ServerCompute extends pulumi.ComponentResource {
     args: NS2ServerComputeArgs,
     opts?: pulumi.ComponentResourceOptions
   ) {
-    super("ns2arena:compute:NS2ServerCompute", name, {}, opts);
+    super("ns2arena:compute:NS2ServerCompute", name, args, opts);
 
     const { computeRegions, repositories, configStores } = args;
 

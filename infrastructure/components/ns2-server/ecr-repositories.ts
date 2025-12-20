@@ -16,7 +16,7 @@ export class EcrRepositories extends pulumi.ComponentResource {
     args: EcrRepositoriesArgs,
     opts?: pulumi.ComponentResourceOptions
   ) {
-    super("ns2arena:containers:EcrRepositories", name, {}, opts);
+    super("ns2arena:containers:EcrRepositories", name, args, opts);
 
     const { computeRegions, replicationRegions } = args;
 
@@ -74,7 +74,7 @@ class EcrRepository extends pulumi.ComponentResource {
   public readonly repository: aws.ecr.Repository;
 
   constructor(name: string, args: {}, opts: pulumi.ComponentResourceOptions) {
-    super("ns2arena:containers:EcrRepository", name, {}, opts);
+    super("ns2arena:containers:EcrRepository", name, args, opts);
 
     this.repository = new aws.ecr.Repository(
       `${name}-repository`,

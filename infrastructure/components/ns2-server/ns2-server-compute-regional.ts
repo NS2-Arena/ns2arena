@@ -2,6 +2,7 @@ import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import * as common from "../../common";
 import { EcrRepoInfo } from "@ns2arena/common";
+import { ServerManagement } from "./server-management";
 
 interface NS2ServerComputeRegionalArgs {
   repository: aws.ecr.Repository;
@@ -12,12 +13,18 @@ interface NS2ServerComputeRegionalArgs {
 }
 
 export class NS2ServerComputeRegional extends pulumi.ComponentResource {
+  public readonly cluster: aws.ecs.Cluster;
+  public readonly taskDefinition: aws.ecs.TaskDefinition;
+  public readonly launchTemplate: aws.ec2.LaunchTemplate;
+
+  private readonly name: string;
+
   constructor(
     name: string,
     args: NS2ServerComputeRegionalArgs,
     opts?: pulumi.ComponentResourceOptions
   ) {
-    super("ns2arena:compute:NS2ServerCompute", name, {}, opts);
+    super("ns2arena:compute:NS2ServerCompute", name, args, opts);
 
     const {
       repository,
@@ -27,8 +34,33 @@ export class NS2ServerComputeRegional extends pulumi.ComponentResource {
       instanceProfileRole,
     } = args;
 
-    const taskRole = new aws.iam.Role(
-      `${name}-task-role`,
+    this.name = name;
+
+    const taskRole = this.createTaskRole(bucketParameter, configBucket);
+    const logGroup = this.createLogGroup(region);
+    this.taskDefinition = this.createTaskDefinition(
+      taskRole,
+      logGroup,
+      repository
+    );
+    this.cluster = this.createCluster();
+    const securityGroup = this.createSecurityGroup();
+    const instanceProfile = this.createInstanceProfile(instanceProfileRole);
+    this.launchTemplate = this.createLaunchTemplate(
+      region,
+      instanceProfile,
+      securityGroup
+    );
+
+    // new ServerManagement(`${name}-server-management`, {});
+  }
+
+  private createTaskRole(
+    bucketParameter: aws.ssm.Parameter,
+    configBucket: aws.s3.Bucket
+  ) {
+    return new aws.iam.Role(
+      `${this.name}-task-role`,
       {
         assumeRolePolicy: common.policy_helpers.Role.servicePrincipal(
           "ecs-tasks.amazonaws.com"
@@ -46,30 +78,25 @@ export class NS2ServerComputeRegional extends pulumi.ComponentResource {
       },
       { parent: this }
     );
+  }
 
-    new aws.iam.RolePolicy(
-      `${name}-dynamic-role-policy`,
-      {
-        role: taskRole.name,
-        policy: aws.iam.getPolicyDocumentOutput({
-          statements: [
-            common.policy_helpers.StateMachine.grantSendTaskNotification(),
-          ],
-        }).json,
-      },
-      { parent: this }
-    );
-
-    const logGroup = new aws.cloudwatch.LogGroup(
-      `${name}-log-group`,
+  private createLogGroup(region: string) {
+    return new aws.cloudwatch.LogGroup(
+      `${this.name}-log-group`,
       {
         name: `/NS2Arena/NS2-Servers/${region}`,
       },
       { parent: this }
     );
+  }
 
-    new aws.ecs.TaskDefinition(
-      `${name}-task-definition`,
+  private createTaskDefinition(
+    taskRole: aws.iam.Role,
+    logGroup: aws.cloudwatch.LogGroup,
+    repository: aws.ecr.Repository
+  ) {
+    return new aws.ecs.TaskDefinition(
+      `${this.name}-task-definition`,
       {
         requiresCompatibilities: ["EC2"],
         taskRoleArn: taskRole.arn,
@@ -115,9 +142,11 @@ export class NS2ServerComputeRegional extends pulumi.ComponentResource {
       },
       { parent: this }
     );
+  }
 
-    const cluster = new aws.ecs.Cluster(
-      `${name}-cluster`,
+  private createCluster() {
+    return new aws.ecs.Cluster(
+      `${this.name}-cluster`,
       {
         configuration: {},
         settings: [
@@ -129,9 +158,11 @@ export class NS2ServerComputeRegional extends pulumi.ComponentResource {
       },
       { parent: this }
     );
+  }
 
-    const securityGroup = new aws.ec2.SecurityGroup(
-      `${name}-security-group`,
+  private createSecurityGroup() {
+    return new aws.ec2.SecurityGroup(
+      `${this.name}-security-group`,
       {
         ingress: ["tcp", "udp"].map((protocol) => ({
           cidrBlocks: ["0.0.0.0/0"],
@@ -152,17 +183,25 @@ export class NS2ServerComputeRegional extends pulumi.ComponentResource {
       },
       { parent: this }
     );
+  }
 
-    const instanceProfile = new aws.iam.InstanceProfile(
-      `${name}-instance-profile`,
+  private createInstanceProfile(instanceProfileRole: aws.iam.Role) {
+    return new aws.iam.InstanceProfile(
+      `${this.name}-instance-profile`,
       {
         role: instanceProfileRole.id,
       },
       { parent: this }
     );
+  }
 
-    const launchTemplate = new aws.ec2.LaunchTemplate(
-      `${name}-launch-template`,
+  private createLaunchTemplate(
+    region: string,
+    instanceProfile: aws.iam.InstanceProfile,
+    securityGroup: aws.ec2.SecurityGroup
+  ) {
+    return new aws.ec2.LaunchTemplate(
+      `${this.name}-launch-template`,
       {
         updateDefaultVersion: true,
         imageId: aws.ssm.getParameterOutput({
@@ -190,7 +229,7 @@ export class NS2ServerComputeRegional extends pulumi.ComponentResource {
             },
           },
         ],
-        userData: cluster.name.apply((clusterName) =>
+        userData: this.cluster.name.apply((clusterName) =>
           Buffer.from(this.getUserData(clusterName), "utf-8").toString("base64")
         ),
         metadataOptions: {
@@ -200,10 +239,6 @@ export class NS2ServerComputeRegional extends pulumi.ComponentResource {
       },
       { parent: this }
     );
-
-    this.registerOutputs({
-      launchTemplate,
-    });
   }
 
   private getUserData(clusterName: string): string {
