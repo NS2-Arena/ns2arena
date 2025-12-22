@@ -43,17 +43,31 @@ export class Parameter {
 }
 
 export class StateMachine {
-  public static grantSendTaskNotification(
-    stateMachine?: aws.sfn.StateMachine
+  public static grantTaskResponse(
+    stateMachine: aws.sfn.StateMachine
   ): Statement {
-    return {
+    return stateMachine.arn.apply((arn) => ({
       effect: "Allow",
       actions: [
         "states:SendTaskFailure",
         "states:SendTaskHeartbeat",
         "states:SendTaskSuccess",
       ],
-      resources: ["*"],
-    };
+      resources: [arn],
+    }));
+  }
+}
+
+export class LogGroup {
+  public static grantWrite(logGroup: aws.cloudwatch.LogGroup): Statement {
+    return logGroup.arn.apply((arn) => ({
+      effect: "Allow",
+      actions: [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+      ],
+      resources: [arn],
+    }));
   }
 }

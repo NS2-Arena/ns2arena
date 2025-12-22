@@ -52,7 +52,11 @@ export class NS2ServerComputeRegional extends pulumi.ComponentResource {
       securityGroup
     );
 
-    // new ServerManagement(`${name}-server-management`, {});
+    new ServerManagement(
+      `${name}-server-management`,
+      { taskRole, region },
+      { parent: this }
+    );
   }
 
   private createTaskRole(
