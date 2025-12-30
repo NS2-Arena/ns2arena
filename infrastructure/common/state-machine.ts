@@ -1,5 +1,5 @@
 import * as aws from "@pulumi/aws";
-import { BaseState } from "./state-machine-states";
+import { BaseTask } from "./state-machine-tasks";
 import * as pulumi from "@pulumi/pulumi";
 
 type IamStatement = aws.types.input.iam.GetPolicyDocumentStatementArgs;
@@ -11,7 +11,7 @@ interface CreateDefinitionOutput {
 
 interface CreateDefinitionArgs {
   comment: string;
-  states: BaseState[];
+  tasks: BaseTask[];
   startAt: string;
   queryLanguage?: string;
 }
@@ -19,24 +19,27 @@ interface CreateDefinitionArgs {
 export function createDefinition(
   args: CreateDefinitionArgs
 ): CreateDefinitionOutput {
-  const { startAt, comment, states, queryLanguage } = args;
+  const { startAt, comment, tasks, queryLanguage } = args;
+
+  const states = tasks.map((task) => task.emit());
 
   const jsonDefinition = pulumi.output({
     StartAt: startAt,
     QueryLanguage: queryLanguage ?? "JSONata",
     Comment: comment,
-    States: states.reduce((prev, stateObj) => {
-      const state = stateObj.state;
-      return {
+    States: states.reduce(
+      (prev, curr) => ({
         ...prev,
-        [state.name]: state.stateDefinition,
-      };
-    }, {}),
+        [curr.name]: curr.taskDefinition,
+      }),
+      {}
+    ),
   });
 
-  const statements = states
-    .filter((stateObj) => stateObj.state.iamStatement !== undefined)
-    .map((stateObj) => stateObj.state.iamStatement) as IamStatement[];
+  const statements = states.reduce(
+    (prev, state) => [...prev, ...state.iamStatements],
+    [] as IamStatement[]
+  );
 
   return {
     definition: jsonDefinition.apply((def) => JSON.stringify(def)),

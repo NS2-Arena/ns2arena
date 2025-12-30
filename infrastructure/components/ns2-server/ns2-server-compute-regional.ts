@@ -3,11 +3,13 @@ import * as pulumi from "@pulumi/pulumi";
 import * as common from "../../common";
 import { EcrRepoInfo } from "@ns2arena/common";
 import { ServerManagement } from "./server-management";
+import { DynamoTables } from "../database/dynamo-tables";
 
 interface NS2ServerComputeRegionalArgs {
   repository: aws.ecr.Repository;
   configBucket: aws.s3.Bucket;
   bucketParameter: aws.ssm.Parameter;
+  tables: DynamoTables;
   instanceProfileRole: aws.iam.Role;
   region: string;
 }
@@ -30,6 +32,7 @@ export class NS2ServerComputeRegional extends pulumi.ComponentResource {
       repository,
       configBucket,
       bucketParameter,
+      tables,
       region,
       instanceProfileRole,
     } = args;
@@ -45,16 +48,23 @@ export class NS2ServerComputeRegional extends pulumi.ComponentResource {
     );
     this.cluster = this.createCluster();
     const securityGroup = this.createSecurityGroup();
-    const instanceProfile = this.createInstanceProfile(instanceProfileRole);
+    const iamInstanceProfile = this.createInstanceProfile(instanceProfileRole);
     this.launchTemplate = this.createLaunchTemplate(
       region,
-      instanceProfile,
+      iamInstanceProfile,
       securityGroup
     );
 
     new ServerManagement(
       `${name}-server-management`,
-      { taskRole, region },
+      {
+        taskRole,
+        region,
+        tables,
+        launchTemplate: this.launchTemplate,
+        iamInstanceProfile,
+        securityGroup,
+      },
       { parent: this }
     );
   }

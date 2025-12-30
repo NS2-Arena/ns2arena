@@ -71,3 +71,18 @@ export class LogGroup {
     }));
   }
 }
+
+export class DynamoTable {
+  public static grantCRUD(table: aws.dynamodb.Table): Statement {
+    return table.arn.apply((arn) => ({
+      effect: "Allow",
+      actions: [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+      ],
+      resources: [arn],
+    }));
+  }
+}

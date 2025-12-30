@@ -3,11 +3,13 @@ import * as aws from "@pulumi/aws";
 import * as common from "../../common";
 import { ConfigStoreBucket } from "../server-configs/config-store-bucket";
 import { NS2ServerComputeRegional } from "./ns2-server-compute-regional";
+import { DynamoTables } from "../database/dynamo-tables";
 
 interface NS2ServerComputeArgs {
   computeRegions: string[];
   repositories: common.types.RegionalData<aws.ecr.Repository>;
   configStores: common.types.RegionalData<ConfigStoreBucket>;
+  tables: DynamoTables;
 }
 
 export class NS2ServerCompute extends pulumi.ComponentResource {
@@ -18,7 +20,7 @@ export class NS2ServerCompute extends pulumi.ComponentResource {
   ) {
     super("ns2arena:compute:NS2ServerCompute", name, args, opts);
 
-    const { computeRegions, repositories, configStores } = args;
+    const { computeRegions, repositories, configStores, tables } = args;
 
     const instanceProfileRole = new aws.iam.Role(
       `${name}-instance-profile-role`,
@@ -48,6 +50,7 @@ export class NS2ServerCompute extends pulumi.ComponentResource {
           repository: repositories[region],
           configBucket: configStores[region].bucket,
           bucketParameter: configStores[region].parameter,
+          tables,
           region,
           instanceProfileRole,
         },

@@ -31,4 +31,5 @@ new NS2ServerCompute("ns2-server-compute", {
   computeRegions,
   repositories: repo.repositories,
   configStores: configStores.stores,
+  tables,
 });
