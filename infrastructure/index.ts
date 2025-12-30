@@ -2,6 +2,7 @@ import * as pulumi from "@pulumi/pulumi";
 import { ConfigStores } from "./components/server-configs/config-store";
 import { EcrRepositories } from "./components/ns2-server/ecr-repositories";
 import { NS2ServerCompute } from "./components/ns2-server/ns2-server-compute";
+import { DynamoTables } from "./components/database/dynamo-tables";
 
 const stack = pulumi.getStack(); // staging/prod
 const config = new pulumi.Config();
@@ -19,6 +20,10 @@ const configStores = new ConfigStores("config-stores", {
 
 const repo = new EcrRepositories("ecr-repositories", {
   computeRegions: computeRegions,
+  replicationRegions: computeRegionsExceptMain,
+});
+
+const tables = new DynamoTables("dynamo-tables", {
   replicationRegions: computeRegionsExceptMain,
 });
 
