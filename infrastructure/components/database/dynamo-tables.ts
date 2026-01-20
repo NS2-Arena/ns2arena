@@ -1,5 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
+import * as common from "../../common";
 
 interface DynamoTablesArgs {
   replicationRegions: string[];
@@ -12,22 +13,30 @@ interface CreateTableArgs {
   attributes: aws.types.input.dynamodb.TableAttribute[];
 }
 
+export type Tables = {
+  [key in common.tables.TableName]: aws.dynamodb.Table;
+};
+
 export class DynamoTables extends pulumi.ComponentResource {
-  public readonly servers: aws.dynamodb.Table;
+  public readonly tables: Tables;
 
   constructor(
     name: string,
     args: DynamoTablesArgs,
-    opts?: pulumi.ComponentResourceOptions
+    opts?: pulumi.ComponentResourceOptions,
   ) {
     super("ns2arena:storage:DynamoTables", name, args, opts);
 
-    this.servers = this.createTable(name, {
+    const servers = this.createTable(name, {
       tableName: "servers",
       replicationRegions: args.replicationRegions,
       hashKey: "id",
       attributes: [{ name: "id", type: "S" }],
     });
+
+    this.tables = {
+      servers,
+    };
   }
 
   private createTable(name: string, args: CreateTableArgs): aws.dynamodb.Table {
@@ -47,7 +56,7 @@ export class DynamoTables extends pulumi.ComponentResource {
         })),
         deletionProtectionEnabled: false,
       },
-      { parent: this }
+      { parent: this },
     );
   }
 }

@@ -1,0 +1,11 @@
+{
+  "name": "lambda_functions",
+  "version": "0.0.1",
+  "description": "Collection of Lambda functions",
+  "main": " ",
+  "scripts": {
+    "build": "echo NOT IMPLEMENTED"
+  },
+  "author": "asdfg",
+  "license": "MIT"
+}

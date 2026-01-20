@@ -2,15 +2,17 @@ import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as common from "../../common";
 import * as path from "path";
-import { DynamoTables } from "../database/dynamo-tables";
+import { DynamoTables, Tables } from "../database/dynamo-tables";
+import { LambdaFunction } from "../lambda/function";
 
 interface ServerManagementArgs {
   taskRole: aws.iam.Role;
   region: string;
-  tables: DynamoTables;
+  tables: Tables;
   launchTemplate: aws.ec2.LaunchTemplate;
-  iamInstanceProfile: aws.iam.InstanceProfile;
+  iamInstanceProfileRole: aws.iam.Role;
   securityGroup: aws.ec2.SecurityGroup;
+  cluster: aws.ecs.Cluster;
 }
 
 interface CreateStateMachineArgs {
@@ -18,13 +20,14 @@ interface CreateStateMachineArgs {
   region: string;
   lambda: aws.lambda.Function;
   launchTemplate: aws.ec2.LaunchTemplate;
-  iamInstanceProfile: aws.iam.InstanceProfile;
+  iamInstanceProfileRole: aws.iam.Role;
   securityGroup: aws.ec2.SecurityGroup;
+  cluster: aws.ecs.Cluster;
 }
 
 interface CreateLambdaArgs {
   region: string;
-  tables: DynamoTables;
+  tables: Tables;
 }
 
 export class ServerManagement extends pulumi.ComponentResource {
@@ -33,7 +36,7 @@ export class ServerManagement extends pulumi.ComponentResource {
   constructor(
     name: string,
     args: ServerManagementArgs,
-    opts?: pulumi.ComponentResourceOptions
+    opts?: pulumi.ComponentResourceOptions,
   ) {
     super("ns2arena:compute:ServerManagement", name, args, opts);
 
@@ -42,8 +45,9 @@ export class ServerManagement extends pulumi.ComponentResource {
       region,
       tables,
       launchTemplate,
-      iamInstanceProfile,
+      iamInstanceProfileRole,
       securityGroup,
+      cluster,
     } = args;
 
     const lambda = this.createLambda(name, { region, tables });
@@ -52,66 +56,30 @@ export class ServerManagement extends pulumi.ComponentResource {
       region,
       lambda,
       launchTemplate,
-      iamInstanceProfile,
+      iamInstanceProfileRole,
       securityGroup,
+      cluster,
     });
   }
 
   private createLambda(name: string, args: CreateLambdaArgs) {
     const { region, tables } = args;
 
-    const logGroup = new aws.cloudwatch.LogGroup(
-      `${name}-lambda-log-group`,
-      { name: `/NS2Arena/Lambda/ServerManagement/${region}` },
-      { parent: this }
-    );
-    const executionRole = new aws.iam.Role(
-      `${name}-execution-role`,
+    return new LambdaFunction(
+      "lambda",
       {
-        name: `server-management-lambda-execution-role-${region}`,
-        assumeRolePolicy: common.policy_helpers.Role.servicePrincipal(
-          "lambda.amazonaws.com"
-        ),
-        inlinePolicies: [
-          {
-            policy: aws.iam.getPolicyDocumentOutput({
-              statements: [
-                common.policy_helpers.LogGroup.grantWrite(logGroup),
-                common.policy_helpers.DynamoTable.grantCRUD(tables.servers),
-              ],
-            }).json,
-          },
+        region,
+        statements: [
+          common.policy_helpers.DynamoTable.grantCRUD(tables.servers),
         ],
-      },
-      { parent: this }
-    );
-
-    const lambda = new aws.lambda.Function(
-      `${name}-lambda`,
-      {
-        name: "server-management",
-        role: executionRole.arn,
-        loggingConfig: {
-          logGroup: logGroup.name,
-          logFormat: "JSON",
-        },
         environment: {
-          variables: {
-            ServersTableName: tables.servers.name,
-          },
+          tables,
         },
-        runtime: "python3.14",
-        handler: "index.handler",
-        architectures: ["arm64"],
-        packageType: "Zip",
-        code: new pulumi.asset.FileArchive(
-          path.join(__dirname, "./server-management-lambda")
-        ),
+        functionName: "server-management",
+        logGroupPrefix: "ServerManagement",
       },
-      { parent: this }
-    );
-
-    return lambda;
+      { parent: this },
+    ).function;
   }
 
   private createStateMachine(name: string, args: CreateStateMachineArgs) {
@@ -120,8 +88,9 @@ export class ServerManagement extends pulumi.ComponentResource {
       region,
       lambda,
       launchTemplate,
-      iamInstanceProfile,
+      iamInstanceProfileRole,
       securityGroup,
+      cluster,
     } = args;
 
     const { definition, statements } = common.state_machine.createDefinition({
@@ -139,7 +108,7 @@ export class ServerManagement extends pulumi.ComponentResource {
             },
             serverUuid: "{% $states.input.serverUuid %}",
           },
-          chain: { next: "InvokeLambdaTest" },
+          chain: { next: "CreateServerRecord" },
         }),
         new common.sfn_tasks.InvokeLambda({
           name: "CreateServerRecord",
@@ -153,16 +122,47 @@ export class ServerManagement extends pulumi.ComponentResource {
           name: "CreateInstance",
           chain: { next: "WaitForInstance" },
           launchTemplate,
-          iamInstanceProfile,
+          iamInstanceProfileRole,
           maxCount: 1,
           minCount: 1,
           securityGroup,
+          assign: {
+            InstanceId: "{% $states.result.Instances[0].InstanceId %}",
+          },
         }),
-        // new common.sfn_tasks.Wait({
-        //   name: "WaitForInstance",
-        //   chain: { end: true },
-        //   duration: 123,
-        // }),
+        new common.sfn_tasks.Wait({
+          name: "WaitForInstance",
+          chain: { next: "ListContainerInstances" },
+          seconds: 3,
+        }),
+        new common.sfn_tasks.ListContainerInstances({
+          name: "ListContainerInstances",
+          chain: { next: "IsInstanceRunning" },
+          output: {
+            ContainerInstanceArns: "{% $states.result.ContainerInstanceArns %}",
+          },
+          cluster,
+          filter: "{% 'ec2InstanceId ==' & $InstanceId %}",
+        }),
+        new common.sfn_tasks.Choice({
+          name: "IsInstanceRunning",
+          default: "WaitForInstance",
+          choices: [
+            {
+              Condition:
+                "{% $count($states.input.ContainerInstanceArns) = 1 %}",
+              Next: "UpdateStatePending",
+            },
+          ],
+        }),
+        new common.sfn_tasks.InvokeLambda({
+          name: "UpdateStatePending",
+          chain: { end: true },
+          lambda,
+          payload: {
+            requestType: "update",
+          },
+        }),
       ],
     });
 
@@ -171,13 +171,13 @@ export class ServerManagement extends pulumi.ComponentResource {
       {
         name: `server-management-state-machine-role-${region}`,
         assumeRolePolicy: common.policy_helpers.Role.servicePrincipal(
-          "states.amazonaws.com"
+          "states.amazonaws.com",
         ),
         inlinePolicies: [
           { policy: aws.iam.getPolicyDocumentOutput({ statements }).json },
         ],
       },
-      { parent: this }
+      { parent: this },
     );
 
     const stateMachine = new aws.sfn.StateMachine(
@@ -186,7 +186,7 @@ export class ServerManagement extends pulumi.ComponentResource {
         definition,
         roleArn: role.arn,
       },
-      { parent: this }
+      { parent: this },
     );
 
     new aws.iam.RolePolicy(
@@ -199,7 +199,7 @@ export class ServerManagement extends pulumi.ComponentResource {
           ],
         }).json,
       },
-      { parent: this }
+      { parent: this },
     );
 
     return stateMachine;

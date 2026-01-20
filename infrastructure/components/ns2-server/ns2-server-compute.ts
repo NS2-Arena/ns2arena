@@ -3,20 +3,20 @@ import * as aws from "@pulumi/aws";
 import * as common from "../../common";
 import { ConfigStoreBucket } from "../server-configs/config-store-bucket";
 import { NS2ServerComputeRegional } from "./ns2-server-compute-regional";
-import { DynamoTables } from "../database/dynamo-tables";
+import { Tables } from "../database/dynamo-tables";
 
 interface NS2ServerComputeArgs {
   computeRegions: string[];
   repositories: common.types.RegionalData<aws.ecr.Repository>;
   configStores: common.types.RegionalData<ConfigStoreBucket>;
-  tables: DynamoTables;
+  tables: Tables;
 }
 
 export class NS2ServerCompute extends pulumi.ComponentResource {
   constructor(
     name: string,
     args: NS2ServerComputeArgs,
-    opts?: pulumi.ComponentResourceOptions
+    opts?: pulumi.ComponentResourceOptions,
   ) {
     super("ns2arena:compute:NS2ServerCompute", name, args, opts);
 
@@ -34,14 +34,14 @@ export class NS2ServerCompute extends pulumi.ComponentResource {
           },
         ],
       },
-      { parent: this }
+      { parent: this },
     );
 
     const resources = computeRegions.map((region) => {
       const provider = new aws.Provider(
         `${name}-provider-${region}`,
         { region },
-        { parent: this }
+        { parent: this },
       );
 
       return new NS2ServerComputeRegional(
@@ -57,7 +57,7 @@ export class NS2ServerCompute extends pulumi.ComponentResource {
         {
           parent: this,
           provider,
-        }
+        },
       );
     });
 

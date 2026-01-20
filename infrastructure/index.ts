@@ -9,7 +9,7 @@ const config = new pulumi.Config();
 const mainRegion = config.require("mainRegion");
 const computeRegions = config.requireObject<string[]>("computeRegions");
 const computeRegionsExceptMain = computeRegions.filter(
-  (region) => region !== mainRegion
+  (region) => region !== mainRegion,
 );
 
 const configStores = new ConfigStores("config-stores", {
@@ -23,9 +23,11 @@ const repo = new EcrRepositories("ecr-repositories", {
   replicationRegions: computeRegionsExceptMain,
 });
 
-const tables = new DynamoTables("dynamo-tables", {
+const dynamoTables = new DynamoTables("dynamo-tables", {
   replicationRegions: computeRegionsExceptMain,
 });
+
+const tables = dynamoTables.tables;
 
 new NS2ServerCompute("ns2-server-compute", {
   computeRegions,

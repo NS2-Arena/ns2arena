@@ -1,6 +1,5 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
-import { generateArn } from "./aws-helpers";
 
 type IamStatement = aws.types.input.iam.GetPolicyDocumentStatementArgs;
 
@@ -8,13 +7,6 @@ interface State {
   name: string;
   taskDefinition: Object;
   iamStatements: IamStatement[];
-}
-
-interface RetryPolicy {
-  ErrorEquals: string[];
-  IntervalSeconds: number;
-  MaxAttempts: number;
-  BackoffRate: number;
 }
 
 type BaseTaskArgs = {
@@ -25,7 +17,12 @@ type Chain = { next: string } | { end: true };
 type IChainable = {
   chain: Chain;
 };
-
+interface RetryPolicy {
+  ErrorEquals: string[];
+  IntervalSeconds: number;
+  MaxAttempts: number;
+  BackoffRate: number;
+}
 type Retry = false | RetryPolicy[] | undefined;
 type IRetryable = {
   retry?: Retry;
@@ -36,9 +33,13 @@ type Assign =
       [key: string]: Assign | string;
     }
   | undefined;
-
 type IAssignable = {
   assign?: Assign;
+};
+
+type Output = { [key: string]: string } | undefined;
+type IOutputable = {
+  output?: Output;
 };
 
 export abstract class BaseTask<T extends BaseTaskArgs = BaseTaskArgs> {
@@ -63,6 +64,7 @@ export abstract class BaseTask<T extends BaseTaskArgs = BaseTaskArgs> {
       ...this.emitDefinition(),
       ...this.emitRetryPolicy(),
       ...this.emitAssign(),
+      ...this.emitOutput(),
       ...this.emitChain(),
     };
   }
@@ -123,6 +125,17 @@ export abstract class BaseTask<T extends BaseTaskArgs = BaseTaskArgs> {
     };
   }
 
+  private emitOutput(): Object {
+    if (!("output" in this.args)) return {};
+
+    const output = this.args.output as Output;
+    if (output === undefined) return {};
+
+    return {
+      Output: output,
+    };
+  }
+
   protected abstract emitDefinition(): Object;
   protected emitStatements(): IamStatement[] {
     return [];
@@ -135,16 +148,12 @@ export abstract class BaseTask<T extends BaseTaskArgs = BaseTaskArgs> {
 // ========================
 // PassState
 // ========================
-type PassArgs = BaseTaskArgs & IChainable & IAssignable;
+type PassArgs = BaseTaskArgs & IChainable & IAssignable & IOutputable;
 export class Pass extends BaseTask<PassArgs> {
   protected emitDefinition(): Object {
     return {
       Type: "Pass",
     };
-  }
-
-  protected emitStatement(): IamStatement | undefined {
-    return undefined;
   }
 }
 
@@ -155,7 +164,8 @@ interface InvokeLambdaArgs
   extends BaseTaskArgs,
     IRetryable,
     IAssignable,
-    IChainable {
+    IChainable,
+    IOutputable {
   lambda: aws.lambda.Function;
   payload?: Object;
 }
@@ -174,12 +184,14 @@ export class InvokeLambda extends BaseTask<InvokeLambdaArgs> {
     };
   }
 
-  protected emitStatement(): IamStatement | undefined {
-    return {
-      actions: ["lambda:InvokeFunction"],
-      resources: [this.args.lambda.arn],
-      effect: "Allow",
-    };
+  protected emitStatements(): IamStatement[] {
+    return [
+      {
+        actions: ["lambda:InvokeFunction"],
+        resources: [this.args.lambda.arn],
+        effect: "Allow",
+      },
+    ];
   }
 
   protected emitDefaultRetryPolicy(): RetryPolicy[] {
@@ -207,11 +219,12 @@ interface RunInstanceArgs
   extends BaseTaskArgs,
     IChainable,
     IAssignable,
-    IRetryable {
+    IRetryable,
+    IOutputable {
   maxCount: 1;
   minCount: 1;
   launchTemplate: aws.ec2.LaunchTemplate;
-  iamInstanceProfile: aws.iam.InstanceProfile;
+  iamInstanceProfileRole: aws.iam.Role;
   securityGroup: aws.ec2.SecurityGroup;
 }
 export class RunInstance extends BaseTask<RunInstanceArgs> {
@@ -239,7 +252,7 @@ export class RunInstance extends BaseTask<RunInstanceArgs> {
     return [
       {
         actions: ["iam:PassRole"],
-        resources: [this.args.iamInstanceProfile.arn],
+        resources: [this.args.iamInstanceProfileRole.arn],
         effect: aws.iam.PolicyStatementEffect.ALLOW,
       },
       {
@@ -248,27 +261,124 @@ export class RunInstance extends BaseTask<RunInstanceArgs> {
           "ec2:DescribeInstances",
           "ec2:StartInstances",
         ],
-        resources: [`arn:aws:${region}:${accountNumber}:instance/*`],
-        effect: aws.iam.PolicyStatementEffect.ALLOW,
-      },
-      {
-        actions: ["ec2:RunInstances"],
         resources: [
-          `arn:aws:${region}:${accountNumber}:instance/*`,
-          `arn:aws:${region}:${accountNumber}:network-interface/*`,
-          `arn:aws:${region}:${accountNumber}:subnet/*`,
-          `arn:aws:${region}:${accountNumber}:volume/*`,
-          `arn:aws:${region}::image/*`,
-          this.args.launchTemplate.arn,
-          this.args.securityGroup.arn,
+          pulumi
+            .all([region, accountNumber])
+            .apply(
+              ([region, accountNumber]) =>
+                `arn:aws:ec2:${region}:${accountNumber}:instance/*`
+            ),
         ],
         effect: aws.iam.PolicyStatementEffect.ALLOW,
       },
       {
+        actions: ["ec2:RunInstances"],
+        resources: pulumi
+          .all([
+            region,
+            accountNumber,
+            this.args.launchTemplate.arn,
+            this.args.securityGroup.arn,
+          ])
+          .apply(
+            ([region, accountNumber, launchTemplateArn, securityGroupArn]) => [
+              `arn:aws:ec2:${region}:${accountNumber}:instance/*`,
+              `arn:aws:ec2:${region}:${accountNumber}:network-interface/*`,
+              `arn:aws:ec2:${region}:${accountNumber}:subnet/*`,
+              `arn:aws:ec2:${region}:${accountNumber}:volume/*`,
+              `arn:aws:ec2:${region}::image/*`,
+              launchTemplateArn,
+              securityGroupArn,
+            ]
+          ),
+        effect: aws.iam.PolicyStatementEffect.ALLOW,
+      },
+      {
         actions: ["ec2:CreateTags"],
-        resources: [`arn:aws:ec2:${region}:${accountNumber}:volume/*`],
+        resources: [
+          pulumi
+            .all([region, accountNumber])
+            .apply(
+              ([region, accountNumber]) =>
+                `arn:aws:ec2:${region}:${accountNumber}:volume/*`
+            ),
+        ],
         effect: aws.iam.PolicyStatementEffect.ALLOW,
       },
     ];
+  }
+}
+
+// ========================
+// Wait
+// ========================
+
+interface WaitArgs extends BaseTaskArgs, IChainable, IAssignable, IOutputable {
+  seconds: number;
+}
+export class Wait extends BaseTask<WaitArgs> {
+  protected emitDefinition(): Object {
+    return {
+      Type: "Wait",
+      Seconds: this.args.seconds,
+    };
+  }
+}
+
+// ========================
+// ListContainerInstances
+// ========================
+
+interface ListContainerInstancesArgs
+  extends BaseTaskArgs,
+    IChainable,
+    IRetryable,
+    IAssignable,
+    IOutputable {
+  cluster: aws.ecs.Cluster;
+  filter?: string;
+}
+export class ListContainerInstances extends BaseTask<ListContainerInstancesArgs> {
+  protected emitDefinition(): Object {
+    return {
+      Type: "Task",
+      Resource: "arn:aws:states:::aws-sdk:ecs:listContainerInstances",
+      Arguments: {
+        Cluster: this.args.cluster.arn,
+        Filter: this.args.filter,
+      },
+    };
+  }
+
+  protected emitStatements(): IamStatement[] {
+    return [
+      {
+        actions: ["ecs:ListContainerInstances"],
+        resources: [this.args.cluster.arn],
+        effect: aws.iam.PolicyStatementEffect.ALLOW,
+      },
+    ];
+  }
+}
+
+// ========================
+// Choice
+// ========================
+
+type ChoiceCondition = {
+  Condition: string;
+  Next: string;
+};
+interface ChoiceArgs extends BaseTaskArgs {
+  default: string;
+  choices: ChoiceCondition[];
+}
+export class Choice extends BaseTask<ChoiceArgs> {
+  protected emitDefinition(): Object {
+    return {
+      Type: "Choice",
+      Choices: this.args.choices,
+      Default: this.args.default,
+    };
   }
 }

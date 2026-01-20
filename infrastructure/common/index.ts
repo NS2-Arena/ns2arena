@@ -3,3 +3,4 @@ export * as types from "./types";
 export * as state_machine from "./state-machine";
 export * as sfn_tasks from "./state-machine-tasks";
 export * as aws_helpers from "./aws-helpers";
+export * as tables from "./database-tables";
