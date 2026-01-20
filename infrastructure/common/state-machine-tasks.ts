@@ -161,11 +161,7 @@ export class Pass extends BaseTask<PassArgs> {
 // InvokeLambda
 // ========================
 interface InvokeLambdaArgs
-  extends BaseTaskArgs,
-    IRetryable,
-    IAssignable,
-    IChainable,
-    IOutputable {
+  extends BaseTaskArgs, IRetryable, IAssignable, IChainable, IOutputable {
   lambda: aws.lambda.Function;
   payload?: Object;
 }
@@ -216,11 +212,7 @@ export class InvokeLambda extends BaseTask<InvokeLambdaArgs> {
 // ========================
 
 interface RunInstanceArgs
-  extends BaseTaskArgs,
-    IChainable,
-    IAssignable,
-    IRetryable,
-    IOutputable {
+  extends BaseTaskArgs, IChainable, IAssignable, IRetryable, IOutputable {
   maxCount: 1;
   minCount: 1;
   launchTemplate: aws.ec2.LaunchTemplate;
@@ -266,7 +258,7 @@ export class RunInstance extends BaseTask<RunInstanceArgs> {
             .all([region, accountNumber])
             .apply(
               ([region, accountNumber]) =>
-                `arn:aws:ec2:${region}:${accountNumber}:instance/*`
+                `arn:aws:ec2:${region}:${accountNumber}:instance/*`,
             ),
         ],
         effect: aws.iam.PolicyStatementEffect.ALLOW,
@@ -289,7 +281,7 @@ export class RunInstance extends BaseTask<RunInstanceArgs> {
               `arn:aws:ec2:${region}::image/*`,
               launchTemplateArn,
               securityGroupArn,
-            ]
+            ],
           ),
         effect: aws.iam.PolicyStatementEffect.ALLOW,
       },
@@ -300,7 +292,7 @@ export class RunInstance extends BaseTask<RunInstanceArgs> {
             .all([region, accountNumber])
             .apply(
               ([region, accountNumber]) =>
-                `arn:aws:ec2:${region}:${accountNumber}:volume/*`
+                `arn:aws:ec2:${region}:${accountNumber}:volume/*`,
             ),
         ],
         effect: aws.iam.PolicyStatementEffect.ALLOW,
@@ -330,11 +322,7 @@ export class Wait extends BaseTask<WaitArgs> {
 // ========================
 
 interface ListContainerInstancesArgs
-  extends BaseTaskArgs,
-    IChainable,
-    IRetryable,
-    IAssignable,
-    IOutputable {
+  extends BaseTaskArgs, IChainable, IRetryable, IAssignable, IOutputable {
   cluster: aws.ecs.Cluster;
   filter?: string;
 }

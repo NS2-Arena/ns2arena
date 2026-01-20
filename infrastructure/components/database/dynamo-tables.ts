@@ -1,6 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import * as common from "../../common";
+import * as arena_common from "@ns2arena/common";
 
 interface DynamoTablesArgs {
   replicationRegions: string[];
@@ -14,7 +14,7 @@ interface CreateTableArgs {
 }
 
 export type Tables = {
-  [key in common.tables.TableName]: aws.dynamodb.Table;
+  [key in arena_common.tables.TableName]: aws.dynamodb.Table;
 };
 
 export class DynamoTables extends pulumi.ComponentResource {

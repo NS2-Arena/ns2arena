@@ -1,6 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import { SSMParameters, EcrRepoInfo } from "@ns2arena/common";
+import * as common from "../../common";
 import { RegionalData } from "../../common/types";
 
 interface EcrRepositoriesArgs {
@@ -14,7 +14,7 @@ export class EcrRepositories extends pulumi.ComponentResource {
   constructor(
     name: string,
     args: EcrRepositoriesArgs,
-    opts?: pulumi.ComponentResourceOptions
+    opts?: pulumi.ComponentResourceOptions,
   ) {
     super("ns2arena:containers:EcrRepositories", name, args, opts);
 
@@ -22,22 +22,25 @@ export class EcrRepositories extends pulumi.ComponentResource {
 
     const accountId = aws.getCallerIdentityOutput().accountId;
 
-    this.repositories = computeRegions.reduce((prev, region) => {
-      const provider = new aws.Provider(
-        `${name}-provider-${region}`,
-        { region },
-        { parent: this }
-      );
+    this.repositories = computeRegions.reduce(
+      (prev, region) => {
+        const provider = new aws.Provider(
+          `${name}-provider-${region}`,
+          { region },
+          { parent: this },
+        );
 
-      return {
-        ...prev,
-        [region]: new EcrRepository(
-          `${name}-repository-${region}`,
-          {},
-          { provider, parent: this }
-        ).repository,
-      };
-    }, {} as typeof this.repositories);
+        return {
+          ...prev,
+          [region]: new EcrRepository(
+            `${name}-repository-${region}`,
+            {},
+            { provider, parent: this },
+          ).repository,
+        };
+      },
+      {} as typeof this.repositories,
+    );
 
     new aws.ecr.ReplicationConfiguration(
       `${name}-replication-config`,
@@ -49,7 +52,7 @@ export class EcrRepositories extends pulumi.ComponentResource {
                 replicationRegions.map((region) => ({
                   region,
                   registryId: accountId,
-                }))
+                })),
               ),
               repositoryFilters: [
                 {
@@ -61,7 +64,7 @@ export class EcrRepositories extends pulumi.ComponentResource {
           ],
         },
       },
-      { parent: this, dependsOn: Object.values(this.repositories) }
+      { parent: this, dependsOn: Object.values(this.repositories) },
     );
 
     this.registerOutputs({
@@ -86,9 +89,9 @@ class EcrRepository extends pulumi.ComponentResource {
             filterType: "WILDCARD",
           },
         ],
-        name: EcrRepoInfo.Repos.Ns2Servers,
+        name: common.repo_info.Repos.Ns2Servers,
       },
-      { parent: this }
+      { parent: this },
     );
 
     new aws.ecr.LifecyclePolicy(
@@ -109,7 +112,7 @@ class EcrRepository extends pulumi.ComponentResource {
           ],
         }).json,
       },
-      { parent: this, dependsOn: [this.repository] }
+      { parent: this, dependsOn: [this.repository] },
     );
 
     new aws.ssm.Parameter(
@@ -117,9 +120,9 @@ class EcrRepository extends pulumi.ComponentResource {
       {
         type: aws.ssm.ParameterType.String,
         insecureValue: this.repository.name,
-        name: SSMParameters.ImageRepositories.NS2Server.Name,
+        name: common.ssm.ImageRepositories.NS2Server.Name,
       },
-      { parent: this }
+      { parent: this },
     );
 
     this.registerOutputs({

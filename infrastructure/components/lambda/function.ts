@@ -2,7 +2,6 @@ import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as common from "../../common";
 import * as path from "path";
-import { Tables } from "../database/dynamo-tables";
 
 interface EnvironmentVariables {
   [key: string]: pulumi.Input<string>;
@@ -11,16 +10,10 @@ interface EnvironmentVariables {
 interface LambdaFunctionArgs {
   region: string;
   statements: pulumi.Input<aws.types.input.iam.GetPolicyDocumentStatementArgs>[];
-  environment: {
-    variables?: EnvironmentVariables;
-
-    /**
-     * Pass tables to include all Table names as environment variables
-     */
-    tables?: Tables;
+  environment?: {
+    variables: EnvironmentVariables;
   };
   functionName: string;
-  logGroupPrefix: string;
 }
 
 export class LambdaFunction extends pulumi.ComponentResource {
@@ -37,7 +30,7 @@ export class LambdaFunction extends pulumi.ComponentResource {
 
     const logGroup = new aws.cloudwatch.LogGroup(
       `${name}-lambda-log-group`,
-      { name: `/NS2Arena/Lambda/${args.logGroupPrefix}/${region}` },
+      { name: `/NS2Arena/Lambda/${args.functionName}/${region}` },
       { parent: this },
     );
     const executionRole = new aws.iam.Role(
@@ -71,36 +64,20 @@ export class LambdaFunction extends pulumi.ComponentResource {
           logFormat: "JSON",
         },
         environment: {
-          variables: {
-            ...args.environment.variables,
-            ...this.createTableVariables(args.environment.tables),
-          },
+          ...args.environment,
         },
-        runtime: "python3.14",
+        runtime: "nodejs24.x",
         handler: "index.handler",
         architectures: ["arm64"],
         packageType: "Zip",
         code: new pulumi.asset.FileArchive(
           path.join(
             __dirname,
-            `../../../lambda-functions/build/${functionName}`,
+            `../../../lambda-functions/dist/${functionName}/`,
           ),
         ),
       },
       { parent: this },
     );
-  }
-
-  private createTableVariables(tables?: Tables): EnvironmentVariables {
-    if (tables === undefined) return {};
-
-    return common.tables.TABLE_NAMES.reduce((prev, name) => {
-      const varname = common.tables.getEnvironmentVariableForName(name);
-
-      return {
-        ...prev,
-        [varname]: tables[name].name,
-      };
-    }, {});
   }
 }

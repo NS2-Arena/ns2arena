@@ -1,7 +1,2 @@
-export * from "./api-types";
-export * from "./database-tables";
-export * from "./domain-names";
-export * from "./environment";
-export * from "./lambda-integration";
-export * from "./ssm-parameters";
-export * from "./ecr-repo-info";
+export * as tables from "./database-tables";
+export * as lambda_interfaces from "./lambda-interfaces";

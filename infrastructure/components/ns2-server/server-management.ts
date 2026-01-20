@@ -1,6 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as common from "../../common";
+import * as arena_common from "@ns2arena/common";
 import * as path from "path";
 import { DynamoTables, Tables } from "../database/dynamo-tables";
 import { LambdaFunction } from "../lambda/function";
@@ -18,7 +19,7 @@ interface ServerManagementArgs {
 interface CreateStateMachineArgs {
   taskRole: aws.iam.Role;
   region: string;
-  lambda: aws.lambda.Function;
+  serverManagementLambda: aws.lambda.Function;
   launchTemplate: aws.ec2.LaunchTemplate;
   iamInstanceProfileRole: aws.iam.Role;
   securityGroup: aws.ec2.SecurityGroup;
@@ -54,7 +55,7 @@ export class ServerManagement extends pulumi.ComponentResource {
     this.stateMachine = this.createStateMachine(name, {
       taskRole,
       region,
-      lambda,
+      serverManagementLambda: lambda,
       launchTemplate,
       iamInstanceProfileRole,
       securityGroup,
@@ -66,17 +67,13 @@ export class ServerManagement extends pulumi.ComponentResource {
     const { region, tables } = args;
 
     return new LambdaFunction(
-      "lambda",
+      `${name}-lambda`,
       {
         region,
         statements: [
           common.policy_helpers.DynamoTable.grantCRUD(tables.servers),
         ],
-        environment: {
-          tables,
-        },
-        functionName: "server-management",
-        logGroupPrefix: "ServerManagement",
+        functionName: "server-record-management",
       },
       { parent: this },
     ).function;
@@ -86,7 +83,7 @@ export class ServerManagement extends pulumi.ComponentResource {
     const {
       taskRole,
       region,
-      lambda,
+      serverManagementLambda: lambda,
       launchTemplate,
       iamInstanceProfileRole,
       securityGroup,
@@ -115,8 +112,10 @@ export class ServerManagement extends pulumi.ComponentResource {
           chain: { next: "CreateInstance" },
           lambda,
           payload: {
-            requestType: "create",
-          },
+            create: {
+              serverUuid: "{% $serverUuid %}",
+            },
+          } satisfies arena_common.lambda_interfaces.ServerManagementRequest,
         }),
         new common.sfn_tasks.RunInstance({
           name: "CreateInstance",
@@ -160,8 +159,11 @@ export class ServerManagement extends pulumi.ComponentResource {
           chain: { end: true },
           lambda,
           payload: {
-            requestType: "update",
-          },
+            updateState: {
+              serverUuid: "{% $serverUuid %}",
+              targetState: "PENDING",
+            },
+          } satisfies arena_common.lambda_interfaces.ServerManagementRequest,
         }),
       ],
     });

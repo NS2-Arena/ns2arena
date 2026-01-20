@@ -1,7 +1,7 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import * as common from "../../common";
-import { EcrRepoInfo } from "@ns2arena/common";
+import * as arena_common from "@ns2arena/common";
 import { ServerManagement } from "./server-management";
 import { Tables } from "../database/dynamo-tables";
 
@@ -130,7 +130,7 @@ export class NS2ServerComputeRegional extends pulumi.ComponentResource {
           .apply(([logGroupArn, repositoryUri]) =>
             JSON.stringify([
               {
-                name: EcrRepoInfo.Containers.Ns2Server,
+                name: common.repo_info.Containers.Ns2Server,
                 image: repositoryUri,
                 portMappings: [
                   { containerPort: 27015, hostPort: 27015, protocol: "tcp" },

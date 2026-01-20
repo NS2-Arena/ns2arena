@@ -1,4 +1,4 @@
-import { SSMParameters } from "@ns2arena/common";
+import * as common from "../../common";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 
@@ -13,7 +13,7 @@ export class ConfigStoreBucket extends pulumi.ComponentResource {
   constructor(
     name: string,
     args: ConfigStoreBucketArgs,
-    opts?: pulumi.ComponentResourceOptions
+    opts?: pulumi.ComponentResourceOptions,
   ) {
     super("ns2arena:server-configs:ConfigBucket", name, args, opts);
 
@@ -26,11 +26,11 @@ export class ConfigStoreBucket extends pulumi.ComponentResource {
         bucket: pulumi
           .all([accountId, region])
           .apply(
-            ([accountId, region]) => `ns2server-configs-${accountId}-${region}`
+            ([accountId, region]) => `ns2server-configs-${accountId}-${region}`,
           ),
         forceDestroy: true,
       },
-      { parent: this }
+      { parent: this },
     );
 
     new aws.s3.BucketVersioning(
@@ -41,7 +41,7 @@ export class ConfigStoreBucket extends pulumi.ComponentResource {
           status: "Enabled",
         },
       },
-      { parent: this, dependsOn: this.bucket }
+      { parent: this, dependsOn: this.bucket },
     );
 
     new aws.s3.BucketPublicAccessBlock(
@@ -53,7 +53,7 @@ export class ConfigStoreBucket extends pulumi.ComponentResource {
         ignorePublicAcls: true,
         restrictPublicBuckets: true,
       },
-      { parent: this, dependsOn: this.bucket }
+      { parent: this, dependsOn: this.bucket },
     );
 
     // Enforce SSL via bucket policy
@@ -75,20 +75,20 @@ export class ConfigStoreBucket extends pulumi.ComponentResource {
                 },
               },
             ],
-          })
+          }),
         ),
       },
-      { parent: this, dependsOn: this.bucket }
+      { parent: this, dependsOn: this.bucket },
     );
 
     this.parameter = new aws.ssm.Parameter(
       `${name}-parameter`,
       {
-        name: SSMParameters.ConfigBucket.Arn,
+        name: common.ssm.ConfigBucket.Arn,
         value: this.bucket.arn,
         type: aws.ssm.ParameterType.String,
       },
-      { parent: this }
+      { parent: this },
     );
 
     this.registerOutputs({

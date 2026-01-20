@@ -2,7 +2,7 @@ import { APIGatewayEvent, Context } from "aws-lambda";
 
 export type LambdaHandler<T, U = APIGatewayEvent> = (
   event: U,
-  context: Context
+  context: Context,
 ) => Promise<T>;
 
 export type HttpLambdaHandler<T> = LambdaHandler<{
@@ -10,14 +10,14 @@ export type HttpLambdaHandler<T> = LambdaHandler<{
   body?: T;
 }>;
 
-export type HttpLambdaHandlerProxy = LambdaHandler<{
+export type APIGatewayProxyResponse = LambdaHandler<{
   statusCode: number;
   body: string;
 }>;
 
 export const httpHandler = <T>(
-  callback: HttpLambdaHandler<T>
-): HttpLambdaHandlerProxy => {
+  callback: HttpLambdaHandler<T>,
+): APIGatewayProxyResponse => {
   return async (event: APIGatewayEvent, context: Context) => {
     return callback(event, context)
       .then((response) => ({

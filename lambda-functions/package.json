@@ -4,8 +4,21 @@
   "description": "Collection of Lambda functions",
   "main": " ",
   "scripts": {
-    "build": "echo NOT IMPLEMENTED"
+    "build": "./build.sh"
   },
   "author": "asdfg",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.971.0",
+    "@aws-sdk/client-sfn": "^3.971.0",
+    "@aws-sdk/lib-dynamodb": "^3.971.0",
+    "@ns2arena/common": "file:../common",
+    "aws-lambda": "^1.0.7",
+    "typescript": "^5.9.3",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.160",
+    "esbuild": "^0.27.2"
+  }
 }
