@@ -1,6 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as common from "../../common";
+import * as arena_common from "@ns2arena/common";
 import { RegionalData } from "../../common/types";
 
 interface EcrRepositoriesArgs {
@@ -120,7 +121,7 @@ class EcrRepository extends pulumi.ComponentResource {
       {
         type: aws.ssm.ParameterType.String,
         insecureValue: this.repository.name,
-        name: common.ssm.ImageRepositories.NS2Server.Name,
+        name: arena_common.ssm.ImageRepositories.NS2Server.Name,
       },
       { parent: this },
     );

@@ -1,4 +1,4 @@
-import * as common from "../../common";
+import * as arena_common from "@ns2arena/common";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 
@@ -84,7 +84,7 @@ export class ConfigStoreBucket extends pulumi.ComponentResource {
     this.parameter = new aws.ssm.Parameter(
       `${name}-parameter`,
       {
-        name: common.ssm.ConfigBucket.Arn,
+        name: arena_common.ssm.ConfigBucket.Arn,
         value: this.bucket.arn,
         type: aws.ssm.ParameterType.String,
       },
