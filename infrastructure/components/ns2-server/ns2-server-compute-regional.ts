@@ -67,6 +67,7 @@ export class NS2ServerComputeRegional extends pulumi.ComponentResource {
         iamInstanceProfileRole,
         securityGroup,
         cluster: this.cluster,
+        taskDefinition: this.taskDefinition,
       },
       { parent: this },
     );

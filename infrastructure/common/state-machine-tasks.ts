@@ -42,6 +42,15 @@ type IOutputable = {
   output?: Output;
 };
 
+type IntegrationPattern =
+  | "RUN_JOB"
+  | "WAIT_FOR_TASK_TOKEN"
+  | "REQUEST_RESPONSE"
+  | undefined;
+type IIntegrationPattern = {
+  integrationPattern?: IntegrationPattern;
+};
+
 export abstract class BaseTask<T extends BaseTaskArgs = BaseTaskArgs> {
   protected readonly args: T;
 
@@ -66,7 +75,37 @@ export abstract class BaseTask<T extends BaseTaskArgs = BaseTaskArgs> {
       ...this.emitAssign(),
       ...this.emitOutput(),
       ...this.emitChain(),
+      ...this.emitResource(),
     };
+  }
+
+  private emitResource(): Object {
+    const baseResource = this.emitBaseResource();
+
+    if (baseResource === "") return {};
+
+    if (!("integrationPattern" in this.args))
+      return {
+        Resource: baseResource,
+      };
+
+    const pattern = this.args.integrationPattern as IntegrationPattern;
+
+    return {
+      Resource: this.getFullResourceArn(baseResource, pattern),
+    };
+  }
+
+  private getFullResourceArn(
+    baseResource: string,
+    pattern: IntegrationPattern,
+  ) {
+    if (pattern === "RUN_JOB") return baseResource;
+    else if (pattern === "REQUEST_RESPONSE") return `${baseResource}.sync`;
+    else if (pattern === "WAIT_FOR_TASK_TOKEN")
+      return `${baseResource}.waitForTaskToken`;
+
+    throw Error("Invalid IntegrationPattern");
   }
 
   private emitRetryPolicy(): Object {
@@ -136,6 +175,7 @@ export abstract class BaseTask<T extends BaseTaskArgs = BaseTaskArgs> {
     };
   }
 
+  protected abstract emitBaseResource(): string;
   protected abstract emitDefinition(): Object;
   protected emitStatements(): IamStatement[] {
     return [];
@@ -150,6 +190,10 @@ export abstract class BaseTask<T extends BaseTaskArgs = BaseTaskArgs> {
 // ========================
 type PassArgs = BaseTaskArgs & IChainable & IAssignable & IOutputable;
 export class Pass extends BaseTask<PassArgs> {
+  protected emitBaseResource(): string {
+    return "";
+  }
+
   protected emitDefinition(): Object {
     return {
       Type: "Pass",
@@ -161,12 +205,22 @@ export class Pass extends BaseTask<PassArgs> {
 // InvokeLambda
 // ========================
 interface InvokeLambdaArgs
-  extends BaseTaskArgs, IRetryable, IAssignable, IChainable, IOutputable {
+  extends
+    BaseTaskArgs,
+    IRetryable,
+    IAssignable,
+    IChainable,
+    IOutputable,
+    IIntegrationPattern {
   lambda: aws.lambda.Function;
   payload?: Object;
 }
 
 export class InvokeLambda extends BaseTask<InvokeLambdaArgs> {
+  protected emitBaseResource(): string {
+    return "arn:aws:states:::lambda:invoke";
+  }
+
   protected emitDefinition(): Object {
     const { lambda, payload } = this.args;
 
@@ -176,7 +230,6 @@ export class InvokeLambda extends BaseTask<InvokeLambdaArgs> {
         FunctionName: lambda.name,
         Payload: payload,
       },
-      Resource: "arn:aws:states:::lambda:invoke",
     };
   }
 
@@ -212,7 +265,13 @@ export class InvokeLambda extends BaseTask<InvokeLambdaArgs> {
 // ========================
 
 interface RunInstanceArgs
-  extends BaseTaskArgs, IChainable, IAssignable, IRetryable, IOutputable {
+  extends
+    BaseTaskArgs,
+    IChainable,
+    IAssignable,
+    IRetryable,
+    IOutputable,
+    IIntegrationPattern {
   maxCount: 1;
   minCount: 1;
   launchTemplate: aws.ec2.LaunchTemplate;
@@ -220,6 +279,10 @@ interface RunInstanceArgs
   securityGroup: aws.ec2.SecurityGroup;
 }
 export class RunInstance extends BaseTask<RunInstanceArgs> {
+  protected emitBaseResource(): string {
+    return "arn:aws:states:::aws-sdk:ec2:runInstances";
+  }
+
   protected emitDefinition(): Object {
     const { maxCount, minCount, launchTemplate } = this.args;
 
@@ -233,7 +296,6 @@ export class RunInstance extends BaseTask<RunInstanceArgs> {
           Version: "$Latest",
         },
       },
-      Resource: "arn:aws:states:::aws-sdk:ec2:runInstances",
     };
   }
 
@@ -309,6 +371,10 @@ interface WaitArgs extends BaseTaskArgs, IChainable, IAssignable, IOutputable {
   seconds: number;
 }
 export class Wait extends BaseTask<WaitArgs> {
+  protected emitBaseResource(): string {
+    return "";
+  }
+
   protected emitDefinition(): Object {
     return {
       Type: "Wait",
@@ -322,15 +388,24 @@ export class Wait extends BaseTask<WaitArgs> {
 // ========================
 
 interface ListContainerInstancesArgs
-  extends BaseTaskArgs, IChainable, IRetryable, IAssignable, IOutputable {
+  extends
+    BaseTaskArgs,
+    IChainable,
+    IRetryable,
+    IAssignable,
+    IOutputable,
+    IIntegrationPattern {
   cluster: aws.ecs.Cluster;
   filter?: string;
 }
 export class ListContainerInstances extends BaseTask<ListContainerInstancesArgs> {
+  protected emitBaseResource(): string {
+    return "arn:aws:states:::aws-sdk:ecs:listContainerInstances";
+  }
+
   protected emitDefinition(): Object {
     return {
       Type: "Task",
-      Resource: "arn:aws:states:::aws-sdk:ecs:listContainerInstances",
       Arguments: {
         Cluster: this.args.cluster.arn,
         Filter: this.args.filter,
@@ -362,11 +437,72 @@ interface ChoiceArgs extends BaseTaskArgs {
   choices: ChoiceCondition[];
 }
 export class Choice extends BaseTask<ChoiceArgs> {
+  protected emitBaseResource(): string {
+    return "";
+  }
+
   protected emitDefinition(): Object {
     return {
       Type: "Choice",
       Choices: this.args.choices,
       Default: this.args.default,
     };
+  }
+}
+
+// ========================
+// ECS::RunTask
+// ========================
+
+interface RunTaskArgs
+  extends
+    BaseTaskArgs,
+    IChainable,
+    IRetryable,
+    IAssignable,
+    IOutputable,
+    IIntegrationPattern {
+  cluster: aws.ecs.Cluster;
+  taskDefinition: aws.ecs.TaskDefinition;
+  overrides?: {
+    ContainerOverrides?: {
+      Name: string;
+      Environment: {
+        Name: string;
+        Value: string;
+      }[];
+    }[];
+  };
+  propagateTags: "TASK_DEFINITION";
+  launchType: "EC2" | "FARGATE";
+  placementConstraints: { Type: string; Expression: string }[];
+}
+export class RunTask extends BaseTask<RunTaskArgs> {
+  protected emitBaseResource(): string {
+    return "arn:aws:states:::ecs:runTask";
+  }
+
+  protected emitDefinition(): Object {
+    return {
+      Type: "Task",
+      Arguments: {
+        Cluster: this.args.cluster.arn,
+        TaskDefinition: this.args.taskDefinition.id,
+        Overrides: this.args.overrides,
+        PropagateTags: this.args.propagateTags,
+        LaunchType: this.args.launchType,
+        PlacementConstraints: this.args.placementConstraints,
+      },
+    };
+  }
+
+  protected emitStatements(): IamStatement[] {
+    return [
+      {
+        actions: ["ecs:RunTask"],
+        resources: [this.args.taskDefinition.arn],
+        effect: aws.iam.PolicyStatementEffect.ALLOW,
+      },
+    ];
   }
 }

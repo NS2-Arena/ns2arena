@@ -2,8 +2,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as common from "../../common";
 import * as arena_common from "@ns2arena/common";
-import * as path from "path";
-import { DynamoTables, Tables } from "../database/dynamo-tables";
+import { Tables } from "../database/dynamo-tables";
 import { LambdaFunction } from "../lambda/function";
 
 interface ServerManagementArgs {
@@ -14,6 +13,7 @@ interface ServerManagementArgs {
   iamInstanceProfileRole: aws.iam.Role;
   securityGroup: aws.ec2.SecurityGroup;
   cluster: aws.ecs.Cluster;
+  taskDefinition: aws.ecs.TaskDefinition;
 }
 
 interface CreateStateMachineArgs {
@@ -24,6 +24,7 @@ interface CreateStateMachineArgs {
   iamInstanceProfileRole: aws.iam.Role;
   securityGroup: aws.ec2.SecurityGroup;
   cluster: aws.ecs.Cluster;
+  taskDefinition: aws.ecs.TaskDefinition;
 }
 
 interface CreateLambdaArgs {
@@ -49,6 +50,7 @@ export class ServerManagement extends pulumi.ComponentResource {
       iamInstanceProfileRole,
       securityGroup,
       cluster,
+      taskDefinition,
     } = args;
 
     const lambda = this.createLambda(name, { region, tables });
@@ -60,6 +62,7 @@ export class ServerManagement extends pulumi.ComponentResource {
       iamInstanceProfileRole,
       securityGroup,
       cluster,
+      taskDefinition,
     });
   }
 
@@ -83,11 +86,12 @@ export class ServerManagement extends pulumi.ComponentResource {
     const {
       taskRole,
       region,
-      serverManagementLambda: lambda,
+      serverManagementLambda,
       launchTemplate,
       iamInstanceProfileRole,
       securityGroup,
       cluster,
+      taskDefinition,
     } = args;
 
     const { definition, statements } = common.state_machine.createDefinition({
@@ -110,7 +114,7 @@ export class ServerManagement extends pulumi.ComponentResource {
         new common.sfn_tasks.InvokeLambda({
           name: "CreateServerRecord",
           chain: { next: "CreateInstance" },
-          lambda,
+          lambda: serverManagementLambda,
           payload: {
             create: {
               serverUuid: "{% $serverUuid %}",
@@ -156,12 +160,82 @@ export class ServerManagement extends pulumi.ComponentResource {
         }),
         new common.sfn_tasks.InvokeLambda({
           name: "UpdateStatePending",
-          chain: { end: true },
-          lambda,
+          chain: { next: "RunServer" },
+          lambda: serverManagementLambda,
           payload: {
             updateState: {
               serverUuid: "{% $serverUuid %}",
               targetState: "PENDING",
+            },
+          } satisfies arena_common.lambda_interfaces.ServerManagementRequest,
+        }),
+        new common.sfn_tasks.RunTask({
+          name: "RunServer",
+          chain: { next: "UpdateStateActive" },
+          cluster,
+          taskDefinition,
+          overrides: {
+            ContainerOverrides: [
+              {
+                Name: "ns2-server",
+                Environment: [
+                  {
+                    Name: "NAME",
+                    Value: "{% $inputArgs.name %}",
+                  },
+                  {
+                    Name: "PASSWORD",
+                    Value: "{% $inputArgs.password %}",
+                  },
+                  {
+                    Name: "LAUNCH_CONFIG",
+                    Value: "{% $inputArgs.launchConfig %}",
+                  },
+                  {
+                    Name: "MAP",
+                    Value: "{% $inputArgs.map %}",
+                  },
+                  {
+                    Name: "TASK_TOKEN",
+                    Value: "{% $states.context.Task.Token %}",
+                  },
+                ],
+              },
+            ],
+          },
+          propagateTags: "TASK_DEFINITION",
+          launchType: "EC2",
+          placementConstraints: [
+            {
+              Type: "memberOf",
+              Expression: "{% 'ec2InstanceId ==' & $InstanceId %}",
+            },
+          ],
+          assign: {
+            TaskArn: "{% $states.result.TaskARN %}",
+          },
+          integrationPattern: "WAIT_FOR_TASK_TOKEN",
+        }),
+        new common.sfn_tasks.InvokeLambda({
+          name: "UpdateStateActive",
+          chain: { next: "UpdateStateDeprovisioning" },
+          integrationPattern: "WAIT_FOR_TASK_TOKEN",
+          lambda: serverManagementLambda,
+          payload: {
+            updateActive: {
+              serverUuid: "{% $serverUuid %}",
+              resumeToken: "{% $states.context.Task.Token %}",
+            },
+          } satisfies arena_common.lambda_interfaces.ServerManagementRequest,
+        }),
+        new common.sfn_tasks.InvokeLambda({
+          name: "UpdateStateDeprovisioning",
+          chain: { end: true },
+          lambda: serverManagementLambda,
+          payload: {
+            updateState: {
+              serverUuid: "{% $serverUuid %}",
+              targetState: "DEPROVISIONING",
             },
           } satisfies arena_common.lambda_interfaces.ServerManagementRequest,
         }),

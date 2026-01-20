@@ -17,6 +17,7 @@ export const handler: LambdaHandler<
   else if ("updateState" in event) await handleUpdate(event.updateState);
   else if ("updateActive" in event)
     await handleUpdateActive(event.updateActive);
+  else throw Error("Unknown event type");
 };
 
 const handleCreate = async (
