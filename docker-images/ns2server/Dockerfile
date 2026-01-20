@@ -55,5 +55,6 @@ ENV MAP="ns2_veil"
 ENV PASSWORD=""
 ENV LAUNCH_CONFIG=""
 ENV TASK_TOKEN=""
+
 SHELL ["/bin/bash", "-c"]
 ENTRYPOINT /home/ns2arena/run.sh "${NAME}" "${MAP}" "${PASSWORD}" "${LAUNCH_CONFIG}"
